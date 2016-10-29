@@ -1,6 +1,8 @@
 # audio-logo
 Adds an audio logo to a (music) track with SOX audio library
 
+####INFO: 
+This script uses ES6 features and needs at least node v5.6.0.
 
 ### Install SOX with mp3 support
 http://sox.sourceforge.net/
