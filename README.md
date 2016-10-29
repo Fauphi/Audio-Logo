@@ -10,7 +10,7 @@ http://sox.sourceforge.net/
 sudo apt-get install sox
 sudo apt-get install libsox-fmt-mp3
 ```
-#### OSX with http://brew.sh/:
+#### OSX (with http://brew.sh/):
 ```
 brew install sox --with-lame
 ```
