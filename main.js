@@ -2,7 +2,7 @@
 * @Author: philipp
 * @Date:   2016-10-28 18:21:49
 * @Last Modified by:   Philipp
-* @Last Modified time: 2016-10-31 23:05:12
+* @Last Modified time: 2016-11-02 12:42:38
 */
 
 'use strict';
@@ -10,48 +10,32 @@
 const SoxCommand 	= require('sox-audio')
 ,	spawn 		   	= require('child_process').spawn;
 
-const AUDIO_LOGO = 'logo.wav'
-,	WAV = process.argv[3] || 'original.wav'
-,	DEMO = 'demo.mp3'
-,	TRACK_LENGTH_SEC = process.argv[4] || 101
+const AUDIO_LOGO = 'files/logo.mp3'
 ,	FADE_TIME = 0.4
 , 	LOGO_DISTANCE = 12
 ,	LOGO_LENGTH = 2
-,	TRIM_DB = Number(process.argv[2]) || -3
-,	LOGO_DB_NUMBER = Number(process.argv[5]) || 28
+,	TRIM_DB = -3
+,	LOGO_DB_NUMBER = 26
 ,	SAMPLE_RATE = 48000
-,	LOGO_COUNT = Math.floor((TRACK_LENGTH_SEC-8) / 12)
-,	SC_AMOUNT = LOGO_COUNT*3+1
-,	OFFSET_START = 10
-,	GAIN = (Math.log(SC_AMOUNT)/Math.log(10))*20;
+,	OFFSET_START = 10;
+
+let DEMO = ''
+,	WAV = ''
+,	TRACK_LENGTH_SEC = 187
+,	LOGO_COUNT = 0
+,	SC_AMOUNT = 0
+,	GAIN = 0;
 
 class Demo {
 	
 	constructor() {
-		const msg = `
-Usage: node main.js [Track Trim Volume db] [Logo Volumen dB] [Track file path]
-
-################
-# DEMO CONFIG: #
-################
-
-TRACK PATH: ${WAV}
-
-FADE TIME: ${FADE_TIME} sec
-
-SAMPLE RATE: ${SAMPLE_RATE} Hz
-
-LOGO COUNT: ${LOGO_COUNT}
-
-TRACK LENGTH: ${TRACK_LENGTH_SEC}
-		`;
-		console.log(msg);
 	}
 
 	_calcLength(length) {
-		const bitCount = Math.floor((length-8) / 12)
+		const bitCount = Math.floor((length-OFFSET_START) / LOGO_DISTANCE)
 		,   offset = (12*2)-4;
-		return (bitCount*12)+OFFSET_START-offset;	
+
+		return (bitCount*12)+OFFSET_START;	
 	}
 
 	_createFadeOutSC(from) {
@@ -134,13 +118,13 @@ TRACK LENGTH: ${TRACK_LENGTH_SEC}
 			const handleClose = () => {
 				const str = outputStr;
 
-			    const rx = new RegExp(/(RMS(\s+)delta):(\s+)([0-9]+).([0-9]+)/, 'g');
+			    const rx = new RegExp(/(RMS(\s+)delta):(\s+)([0-9]+).([0-9]+)/g);
 			    let	res = str.match(rx)
 			    ,	rmsDelta = 0;
 			    
 			    if(res && res.length>0) {
 			    	res = res[0];
-				    const rx2 = new RegExp(/([0-9]+).([0-9]+)/, 'g');
+				    const rx2 = new RegExp(/([0-9]+).([0-9]+)/g);
 				    rmsDelta = Number(res.match(rx2)[0]);
 				}
 
@@ -167,10 +151,18 @@ TRACK LENGTH: ${TRACK_LENGTH_SEC}
 		});
 	}
 
-	create() {
+	create(trackFilePath, duration) {
+		WAV = trackFilePath || process.argv[2];
+		TRACK_LENGTH_SEC = duration || process.argv[3];
+		DEMO = 'files/DEMO-'+WAV.replace('files/testsongs/', '').replace('.wav', '')+'.mp3';
+		LOGO_COUNT = Math.floor((TRACK_LENGTH_SEC-8) / 12);
+		SC_AMOUNT = LOGO_COUNT*3+1;
+		GAIN = (Math.log(SC_AMOUNT)/Math.log(10))*20;;
+
 		const rmsDelta = this._rmsDelta().then((res) => {
 			console.log('RMS DELTA: ', res);
 			console.log('LOGO DB CALC: ', '- ( '+LOGO_DB_NUMBER+' - ( '+res+' * 100 )');
+
 			const logodB = -(LOGO_DB_NUMBER-(res*100))
 			,	createDemo = this._soxCommand(TRIM_DB, logodB)
 			,	start = new Date().getTime();
